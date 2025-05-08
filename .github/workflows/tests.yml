@@ -25,6 +25,11 @@ jobs:
         python -m pip install --upgrade pip
         pip install -e ".[dev]"
         pip install pytest pytest-cov codecov
+        pip install pre-commit
+
+    - name: Run pre-commit hooks
+      run: |
+        pre-commit run --all-files
 
     - name: Run tests with coverage
       run: |
