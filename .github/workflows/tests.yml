@@ -15,10 +15,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Fetch all history for pre-commit
+
     - name: Set up Python ${{ matrix.python-version }}
       uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
+        cache: 'pip'  # Enable pip caching
 
     - name: Install dependencies
       run: |
@@ -27,16 +31,22 @@ jobs:
         pip install pytest pytest-cov codecov
         pip install pre-commit
 
+    - name: Set up pre-commit
+      run: |
+        pre-commit install
+        pre-commit install-hooks
+
     - name: Run pre-commit hooks
       run: |
-        pre-commit run --all-files
+        pre-commit run --all-files || (echo "pre-commit hooks failed" && exit 1)
 
     - name: Run tests with coverage
       run: |
-        pytest --cov=parquet_converter --cov-report=xml
+        pytest -v --cov=parquet_converter --cov-report=xml --cov-report=term-missing
 
     - name: Upload coverage to Codecov
       uses: codecov/codecov-action@v3
       with:
         file: ./coverage.xml
         fail_ci_if_error: true
+        verbose: true
