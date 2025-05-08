@@ -52,7 +52,7 @@ jobs:
 
     - name: Run linters
       run: |
-        flake8 parquet_converter
+        flake8 --max-line-length=120 parquet_converter
         mypy parquet_converter
         black --check parquet_converter
         isort --check-only parquet_converter
