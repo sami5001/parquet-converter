@@ -31,7 +31,6 @@ dependencies = [
 test = [
     "pytest",
     "pytest-cov",
-    "codecov",
 ]
 dev = [
     "parquet-converter[test]",  # Include test dependencies
