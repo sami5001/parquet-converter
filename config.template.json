@@ -1,0 +1,19 @@
+{
+    "csv_options": {
+        "encoding": "utf-8",
+        "na_values": ["", "NA", "NULL"],
+        "low_memory": false
+    },
+    "txt_options": {
+        "encoding": "utf-8",
+        "na_values": ["", "NA", "NULL"],
+        "low_memory": false
+    },
+    "delimiter": null,
+    "output_dir": null,
+    "log_level": "INFO",
+    "datetime_formats": {
+        "default": "%Y-%m-%d",
+        "custom": []
+    }
+}

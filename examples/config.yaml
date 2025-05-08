@@ -1,0 +1,33 @@
+# Sample configuration for Parquet Converter
+
+# CSV file options
+csv:
+  delimiter: ","
+  encoding: "utf-8"
+  header: 0
+  na_values: ["", "NA", "NULL"]
+  low_memory: false
+
+# TXT file options
+txt:
+  delimiter: "\t"
+  encoding: "utf-8"
+  header: 0
+  na_values: ["", "NA", "NULL"]
+  low_memory: false
+
+# Date/time parsing options
+datetime_formats:
+  default: "%Y-%m-%d"
+  custom: ["%Y-%m-%d %H:%M:%S", "%d/%m/%Y"]
+
+# Data type inference
+infer_dtypes: true
+
+# Output options
+compression: "snappy"
+output_dir: "output"
+
+# Logging options
+log_level: "INFO"
+log_file: "conversion.log"

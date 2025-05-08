@@ -1,0 +1,6 @@
+id,name,age,salary,joined_date,is_active,department
+1,John Smith,35,75000.50,2020-01-15,true,Engineering
+2,Jane Doe,28,65000.75,2021-03-20,true,Marketing
+3,Bob Johnson,42,85000.25,2019-07-10,false,Finance
+4,Alice Brown,31,70000.00,2022-02-01,true,HR
+5,Charlie Wilson,39,80000.50,2020-11-30,true,Engineering

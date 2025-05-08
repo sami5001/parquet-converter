@@ -1,0 +1,6 @@
+product_id	product_name	price	stock	last_updated	in_stock	category
+P001	Laptop	1299.99	50	2024-01-01	true	Electronics
+P002	Desk Chair	199.50	100	2024-01-02	true	Furniture
+P003	Coffee Maker	79.99	25	2024-01-03	false	Appliances
+P004	Monitor	349.99	75	2024-01-04	true	Electronics
+P005	Keyboard	59.99	200	2024-01-05	true	Electronics
