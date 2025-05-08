@@ -86,7 +86,7 @@ pip install -e .
 
 ### Development Setup
 
-For more detailed setup instructions, see [README-setup.md](README-setup.md).
+For more detailed setup instructions, see [README-setup.md](https://github.com/sami5001/parquet-converter/blob/main/README-setup.md).
 
 ```bash
 # Install development dependencies
@@ -356,7 +356,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Contributing
 
-Contributions to the Parquet Converter project are welcome! Please refer to [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines on how to contribute.
+Contributions to the Parquet Converter project are welcome! Please refer to [CONTRIBUTING.md](https://github.com/sami5001/parquet-converter/blob/main/CONTRIBUTING.md) for detailed guidelines on how to contribute.
 
 Briefly, please follow these steps to contribute:
 

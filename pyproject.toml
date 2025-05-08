@@ -16,6 +16,36 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
 ]
+dependencies = [
+    "pandas",
+    "numpy",
+    "python-dotenv",
+    "pyarrow",
+    "pydantic",
+    "pyyaml",
+    "tqdm",
+    "tabulate",
+]
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "pytest-cov",
+    "codecov",
+]
+dev = [
+    "parquet-converter[test]",  # Include test dependencies
+    "pre-commit",
+    "black",
+    "isort",
+    "flake8",
+    "mypy",
+    # Add any other dev tools here, e.g., typeshed stubs if needed by mypy
+    "types-PyYAML",
+    "types-python-dateutil",
+    "types-tabulate",
+    "types-setuptools",
+]
 
 [project.urls]
 "Homepage" = "https://github.com/sami5001/parquet-converter"
