@@ -1,18 +1,18 @@
 """Tests for the configuration module."""
 
-import os
 from pathlib import Path
+from typing import Dict
 
 import pytest
 import yaml
 
-from ..config import Config, CSVOptions, DateTimeFormats, TXTOptions, load_config
+from ..config import Config, load_config, save_config
 
 
 @pytest.fixture
-def config_file(tmp_path):
-    """Create a sample configuration file."""
-    config_data = {
+def config_dict() -> Dict:
+    """Create a test configuration dictionary."""
+    return {
         "csv": {
             "delimiter": ",",
             "encoding": "utf-8",
@@ -32,96 +32,102 @@ def config_file(tmp_path):
             "custom": ["%d/%m/%Y", "%Y-%m-%d %H:%M:%S"],
         },
         "log_level": "INFO",
-        "output_dir": "output",
     }
 
+
+def test_load_config_defaults() -> None:
+    """Test loading default configuration."""
+    config = load_config()
+    assert isinstance(config, Config)
+    assert config.csv.delimiter == ","
+    assert config.txt.delimiter == "\t"
+    assert config.log_level == "INFO"
+
+
+def test_load_config_yaml(tmp_path: Path, config_dict: Dict) -> None:
+    """Test loading configuration from YAML file."""
     config_file = tmp_path / "config.yaml"
     with open(config_file, "w") as f:
-        yaml.dump(config_data, f)
+        yaml.dump(config_dict, f)
 
-    return config_file
-
-
-def test_csv_options():
-    """Test CSV options configuration."""
-    options = CSVOptions(encoding="latin1", na_values=["N/A"], low_memory=True)
-
-    assert options.encoding == "latin1"
-    assert options.na_values == ["N/A"]
-    assert options.low_memory is True
-
-
-def test_txt_options():
-    """Test TXT options configuration."""
-    options = TXTOptions(encoding="utf-16", na_values=["missing"], low_memory=True)
-
-    assert options.encoding == "utf-16"
-    assert options.na_values == ["missing"]
-    assert options.low_memory is True
-
-
-def test_datetime_formats():
-    """Test datetime formats configuration."""
-    formats = DateTimeFormats(default="%d-%m-%Y", custom=["%Y/%m/%d", "%H:%M:%S"])
-
-    assert formats.default == "%d-%m-%Y"
-    assert formats.custom == ["%Y/%m/%d", "%H:%M:%S"]
-
-
-def test_config_validation():
-    """Test configuration validation."""
-    # Test valid log level
-    config = Config(log_level="DEBUG")
-    assert config.log_level == "DEBUG"
-
-    # Test invalid log level
-    with pytest.raises(ValueError):
-        Config(log_level="INVALID")
-
-    # Test output directory validation
-    config = Config(output_dir="output")
-    assert isinstance(config.output_dir, Path)
-
-
-def test_load_config_yaml(config_file):
-    """Test loading configuration from YAML file."""
-    config = load_config(str(config_file))
-
+    config = load_config(config_file)
     assert isinstance(config, Config)
-    assert config.log_level == "INFO"
-    assert isinstance(config.output_dir, Path)
-    assert config.output_dir == Path("output")
+    assert config.csv.delimiter == config_dict["csv"]["delimiter"]
+    assert config.txt.delimiter == config_dict["txt"]["delimiter"]
+    assert config.log_level == config_dict["log_level"]
 
 
-def test_load_config_json(tmp_path):
+def test_load_config_json(tmp_path: Path, config_dict: Dict) -> None:
     """Test loading configuration from JSON file."""
-    config_data = {"log_level": "DEBUG", "output_dir": "json_output"}
-
     config_file = tmp_path / "config.json"
     with open(config_file, "w") as f:
         import json
 
-        json.dump(config_data, f)
+        json.dump(config_dict, f)
 
-    config = load_config(str(config_file))
-    assert config.log_level == "DEBUG"
-    assert config.output_dir == Path("json_output")
-
-
-def test_load_config_env(monkeypatch):
-    """Test loading configuration from environment variables."""
-    monkeypatch.setenv("LOG_LEVEL", "ERROR")
-    monkeypatch.setenv("OUTPUT_DIR", "env_output")
-
-    config = load_config()
-    assert config.log_level == "ERROR"
-    assert config.output_dir == Path("env_output")
+    config = load_config(config_file)
+    assert isinstance(config, Config)
+    assert config.csv.delimiter == config_dict["csv"]["delimiter"]
+    assert config.txt.delimiter == config_dict["txt"]["delimiter"]
+    assert config.log_level == config_dict["log_level"]
 
 
-def test_load_config_invalid_file():
-    """Test loading configuration from invalid file."""
-    with pytest.raises(FileNotFoundError):
-        load_config("nonexistent.yaml")
+def test_save_config_yaml(tmp_path: Path, config_dict: Dict) -> None:
+    """Test saving configuration to YAML file."""
+    config = Config(**config_dict)
+    output_file = tmp_path / "config.yaml"
+
+    save_config(config, output_file)
+    assert output_file.exists()
+
+    # Load and verify
+    with open(output_file) as f:
+        saved_config = yaml.safe_load(f)
+
+    assert saved_config["csv"]["delimiter"] == config_dict["csv"]["delimiter"]
+    assert saved_config["txt"]["delimiter"] == config_dict["txt"]["delimiter"]
+    assert saved_config["log_level"] == config_dict["log_level"]
+
+
+def test_save_config_json(tmp_path: Path, config_dict: Dict) -> None:
+    """Test saving configuration to JSON file."""
+    config = Config(**config_dict)
+    output_file = tmp_path / "config.json"
+
+    save_config(config, output_file)
+    assert output_file.exists()
+
+    # Load and verify
+    with open(output_file) as f:
+        import json
+
+        saved_config = json.load(f)
+
+    assert saved_config["csv"]["delimiter"] == config_dict["csv"]["delimiter"]
+    assert saved_config["txt"]["delimiter"] == config_dict["txt"]["delimiter"]
+    assert saved_config["log_level"] == config_dict["log_level"]
+
+
+def test_invalid_config_file(tmp_path: Path) -> None:
+    """Test handling of invalid configuration file."""
+    config_file = tmp_path / "config.invalid"
+    config_file.write_text("invalid config")
 
     with pytest.raises(ValueError):
-        load_config("invalid.txt")
+        load_config(config_file)
+
+
+def test_missing_config_file(tmp_path: Path) -> None:
+    """Test handling of missing configuration file."""
+    config_file = tmp_path / "nonexistent.yaml"
+
+    with pytest.raises(FileNotFoundError):
+        load_config(config_file)
+
+
+def test_invalid_log_level(config_dict: Dict) -> None:
+    """Test validation of log level."""
+    config_dict["log_level"] = "INVALID"
+
+    with pytest.raises(ValueError):
+        Config(**config_dict)

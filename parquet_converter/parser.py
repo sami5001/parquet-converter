@@ -1,11 +1,9 @@
 """File parsing functionality for the Parquet Converter."""
 
 import logging
-from datetime import datetime
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Dict, Union
 
-import numpy as np
 import pandas as pd
 
 logger = logging.getLogger(__name__)
@@ -112,17 +110,22 @@ def infer_dtypes(df: pd.DataFrame, config: Dict) -> pd.DataFrame:
     Returns:
         DataFrame with inferred data types
     """
-    datetime_formats = []
+    # Handle datetime formats
+    datetime_formats = {}
     if "datetime_formats" in config:
         if isinstance(config["datetime_formats"], dict):
-            datetime_formats.extend(
-                [
-                    config["datetime_formats"].get("default", "%Y-%m-%d"),
-                    *config["datetime_formats"].get("custom", []),
-                ]
-            )
+            datetime_formats.update(config["datetime_formats"])
         elif isinstance(config["datetime_formats"], list):
-            datetime_formats.extend(config["datetime_formats"])
+            for fmt in config["datetime_formats"]:
+                datetime_formats[fmt] = fmt
+
+    # Convert datetime columns
+    for col in datetime_formats:
+        df[col] = pd.to_datetime(
+            df[col],
+            format=datetime_formats[col],
+            errors="coerce",
+        )
 
     for col in df.columns:
         # Skip if dtype is already specified
@@ -155,7 +158,8 @@ def infer_dtypes(df: pd.DataFrame, config: Dict) -> pd.DataFrame:
 
         # Try to infer boolean
         try:
-            if df[col].isin(["True", "False", "true", "false", "1", "0"]).all():
+            bool_values = ["True", "False", "true", "false", "1", "0"]
+            if df[col].isin(bool_values).all():
                 df[col] = df[col].map(
                     {
                         "True": True,

@@ -3,7 +3,7 @@
 import logging
 import os
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 import yaml
 from dotenv import load_dotenv
@@ -46,8 +46,8 @@ class Config(BaseModel):
     txt: TXTOptions = Field(default_factory=TXTOptions)
     datetime_formats: DateTimeFormats = Field(default_factory=DateTimeFormats)
     log_level: str = "INFO"
-    output_dir: Optional[Path] = None
-    log_file: Optional[Path] = None
+    output_dir: Optional[Union[str, Path]] = None
+    log_file: Optional[Union[str, Path]] = None
 
     @field_validator("log_level")
     @classmethod
@@ -55,20 +55,21 @@ class Config(BaseModel):
         """Validate log level."""
         valid_levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
         if v.upper() not in valid_levels:
-            raise ValueError(f"Invalid log level: {v}. Must be one of {valid_levels}")
+            raise ValueError(f"Invalid log level: {v}. " f"Must be one of {valid_levels}")
         return v.upper()
 
-    @field_validator("output_dir")
+    @field_validator("output_dir", "log_file")
     @classmethod
-    def validate_output_dir(cls, v: Optional[Path]) -> Optional[Path]:
-        """Validate output directory."""
+    def validate_path(cls, v: Optional[Union[str, Path]]) -> Optional[Path]:
+        """Validate and convert path to Path object."""
         if v is not None:
-            v = Path(v)
-            v.mkdir(parents=True, exist_ok=True)
+            v = Path(str(v))
+            if isinstance(v, Path):
+                v.mkdir(parents=True, exist_ok=True)
         return v
 
 
-def load_config(config_path: Optional[str] = None) -> Config:
+def load_config(config_path: Optional[Union[str, Path]] = None) -> Config:
     """Load configuration from file and environment variables.
 
     Args:
@@ -89,17 +90,20 @@ def load_config(config_path: Optional[str] = None) -> Config:
 
     # Load from config file if provided
     if config_path:
-        config_path = Path(config_path)
+        config_path = Path(str(config_path))
 
         # Check file extension before checking existence
         if config_path.suffix not in [".yaml", ".yml", ".json"]:
-            raise ValueError(
-                f"Invalid config file format: {config_path.suffix}. Must be .yaml, .yml, or .json"
-            )
+            # Create a multi-line message string
+            msg_part1 = "Invalid config file format: {}. "
+            msg_part2 = "Must be .yaml, .yml, or .json"
+            full_msg = msg_part1 + msg_part2
+            raise ValueError(full_msg.format(config_path.suffix))
 
         # Check file existence
         if not config_path.exists():
-            raise FileNotFoundError(f"Configuration file not found: {config_path}")
+            msg = "Configuration file not found: {}"
+            raise FileNotFoundError(msg.format(config_path))
 
         # Load config file
         with open(config_path) as f:
@@ -122,6 +126,15 @@ def load_config(config_path: Optional[str] = None) -> Config:
         if value is not None:
             config_dict[key] = value
 
+    # Convert string paths to Path objects
+    output_dir_is_str = isinstance(config_dict.get("output_dir"), str)
+    if config_dict.get("output_dir") and output_dir_is_str:
+        config_dict["output_dir"] = Path(config_dict["output_dir"])
+
+    log_file_is_str = isinstance(config_dict.get("log_file"), str)
+    if config_dict.get("log_file") and log_file_is_str:
+        config_dict["log_file"] = Path(config_dict["log_file"])
+
     # Create config object
     config = Config(**config_dict)
 
@@ -131,7 +144,7 @@ def load_config(config_path: Optional[str] = None) -> Config:
     return config
 
 
-def save_config(config: Config, output_path: Path) -> None:
+def save_config(config: Config, output_path: Union[str, Path]) -> None:
     """Save configuration to file.
 
     Args:
@@ -140,6 +153,9 @@ def save_config(config: Config, output_path: Path) -> None:
     """
     # Convert config to dictionary
     config_dict = config.model_dump()
+
+    # Ensure output_path is a Path object
+    output_path = Path(str(output_path))
 
     # Save to file
     with open(output_path, "w") as f:

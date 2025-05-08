@@ -3,7 +3,6 @@
 import json
 import logging
 import sys
-from dataclasses import asdict
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
@@ -32,9 +31,7 @@ class JSONEncoder(json.JSONEncoder):
         return super().default(obj)
 
 
-def setup_logging(
-    level: str = "INFO", log_file: Optional[Path] = None, verbose: bool = False
-) -> None:
+def setup_logging(level: str = "INFO", log_file: Optional[Path] = None, verbose: bool = False) -> None:
     """Set up logging configuration.
 
     Args:
@@ -48,12 +45,8 @@ def setup_logging(
         raise ValueError(f"Invalid log level: {level}")
 
     # Create formatters
-    console_formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-    file_formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
+    console_formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+    file_formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
     # Set up root logger
     root_logger = logging.getLogger()
@@ -68,12 +61,11 @@ def setup_logging(
     console_handler.setLevel(logging.DEBUG if verbose else numeric_level)
     root_logger.addHandler(console_handler)
 
-    # Add file handler if specified
+    # Add file handler if log file is specified
     if log_file:
         log_file.parent.mkdir(parents=True, exist_ok=True)
         file_handler = logging.FileHandler(log_file)
         file_handler.setFormatter(file_formatter)
-        file_handler.setLevel(numeric_level)
         root_logger.addHandler(file_handler)
 
     # Set up package logger
@@ -114,15 +106,19 @@ def format_stats_table(stats_list: List[ConversionStats]) -> str:
     for stats in stats_list:
         status = "Success" if not stats.errors else "Failed"
         rows.append(
-            [stats.input_file, stats.rows, stats.columns, stats.output_file, status]
+            [
+                stats.input_file,
+                stats.rows,
+                stats.columns,
+                stats.output_file,
+                status,
+            ]
         )
 
     return tabulate(rows, headers=headers, tablefmt="grid")
 
 
-def save_conversion_report(
-    stats_list: List[ConversionStats], output_dir: Path, config: Dict[str, Any]
-) -> None:
+def save_conversion_report(stats_list: List[ConversionStats], output_dir: Path, config: Dict[str, Any]) -> None:
     """Save conversion report to a JSON file.
 
     Args:
@@ -130,10 +126,15 @@ def save_conversion_report(
         output_dir: Output directory
         config: Configuration dictionary
     """
+    # Process config to handle Path objects
+    processed_config = {}
+    for k, v in config.items():
+        processed_config[k] = str(v) if isinstance(v, Path) else v
+
     # Create report data
     report = {
         "timestamp": datetime.now().isoformat(),
-        "config": {k: str(v) if isinstance(v, Path) else v for k, v in config.items()},
+        "config": processed_config,
         "summary": {
             "total_files": len(stats_list),
             "successful": sum(1 for s in stats_list if not s.errors),

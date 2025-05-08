@@ -1,9 +1,9 @@
 """Tests for the logging module."""
 
 import logging
-import os
 from io import StringIO
 from pathlib import Path
+from typing import Generator
 
 import pytest
 
@@ -12,7 +12,7 @@ from ..stats import ConversionStats
 
 
 @pytest.fixture(autouse=True)
-def setup_logging_fixture() -> None:
+def setup_logging_fixture() -> Generator[None, None, None]:
     """Set up logging for each test."""
     # Clear any existing handlers
     root_logger = logging.getLogger()

@@ -2,20 +2,17 @@
 
 import logging
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Union
 
-import pandas as pd
 from tqdm import tqdm
 
-from .parser import infer_dtypes, parse_file
+from .parser import parse_file
 from .stats import ConversionStats
 
 logger = logging.getLogger(__name__)
 
 
-def convert_file(
-    input_path: Union[str, Path], output_dir: Union[str, Path], config: Dict
-) -> ConversionStats:
+def convert_file(input_path: Union[str, Path], output_dir: Union[str, Path], config: Dict) -> ConversionStats:
     """Convert a single file to Parquet format.
 
     Args:
@@ -41,7 +38,9 @@ def convert_file(
 
         # Save as Parquet
         df.to_parquet(
-            output_path, compression=config.get("compression", "snappy"), index=False
+            output_path,
+            compression=config.get("compression", "snappy"),
+            index=False,
         )
 
         # Create stats
@@ -80,9 +79,7 @@ def convert_file(
         )
 
 
-def convert_directory(
-    input_dir: Union[str, Path], output_dir: Union[str, Path], config: Dict
-) -> List[ConversionStats]:
+def convert_directory(input_dir: Union[str, Path], output_dir: Union[str, Path], config: Dict) -> List[ConversionStats]:
     """Convert all supported files in a directory to Parquet format.
 
     Args:
@@ -106,7 +103,7 @@ def convert_directory(
     }
 
     # Find all supported files
-    input_files = []
+    input_files: List[Path] = []
     for ext in supported_extensions:
         input_files.extend(input_dir.glob(f"*{ext}"))
 

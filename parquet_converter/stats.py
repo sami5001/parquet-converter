@@ -1,8 +1,8 @@
-"""Statistics tracking for file conversions."""
+"""Statistics tracking for the Parquet Converter."""
 
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 
 @dataclass
@@ -13,8 +13,8 @@ class ConversionStats:
     output_file: str
     rows_processed: int
     rows_converted: int
-    errors: List[str] = field(default_factory=list)
-    warnings: List[str] = field(default_factory=list)
+    errors: List[str]
+    warnings: List[str]
     column_stats: Dict[str, Dict] = field(default_factory=dict)
 
     @property
@@ -57,7 +57,7 @@ class ConversionStats:
 
         Args:
             column: Column name
-            stats: Dictionary of statistics for the column
+            stats: Dictionary of statistics
         """
         self.column_stats[column] = stats
 
