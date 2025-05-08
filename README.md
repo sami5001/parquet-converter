@@ -63,6 +63,12 @@ This project is part of Sami Adnan's DPhil research at the Nuffield Department o
 
 ## Installation
 
+### From PyPI
+
+```bash
+pip install parquet-converter
+```
+
 ### From GitHub
 
 ```bash
@@ -79,6 +85,8 @@ pip install -e .
 ```
 
 ### Development Setup
+
+For more detailed setup instructions, see [README-setup.md](README-setup.md).
 
 ```bash
 # Install development dependencies
@@ -348,7 +356,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Contributing
 
-Contributions to the Parquet Converter project are welcome! Please follow these steps to contribute:
+Contributions to the Parquet Converter project are welcome! Please refer to [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines on how to contribute.
+
+Briefly, please follow these steps to contribute:
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
