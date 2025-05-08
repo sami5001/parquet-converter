@@ -37,7 +37,7 @@ def output_dir(tmp_path: Path) -> Path:
 
 @pytest.fixture
 def config() -> dict:
-    """Create a test configuration."""
+    """Create a test configuration matching Config model structure."""
     return {
         "csv": {
             "delimiter": ",",
@@ -49,10 +49,14 @@ def config() -> dict:
             "encoding": "utf-8",
             "header": 0,
         },
+        # Match the structure from Config.datetime_formats.model_dump()
         "datetime_formats": {
-            "date": "%Y-%m-%d",
-            "timestamp": "%Y-%m-%d %H:%M:%S",
+            "default": "%Y-%m-%d",
+            "custom": [],
         },
+        # Add other relevant top-level config keys if needed by tests
+        "infer_dtypes": True,
+        "compression": "snappy",
     }
 
 

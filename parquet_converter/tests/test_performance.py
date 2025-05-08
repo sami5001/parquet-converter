@@ -107,11 +107,23 @@ def large_csv_file(tmp_path: Path) -> Path:
     """Create a large CSV file for testing."""
     file_path = tmp_path / "large.csv"
     rows = 100_000
+    # Handle potential OutOfBoundsDatetime error for large date ranges
+    try:
+        dates = pd.date_range("2023-01-01", periods=rows)
+    except pd.errors.OutOfBoundsDatetime:
+        # If default range exceeds limits, create a valid bounded range
+        # This might not be semantically identical but allows the test to run
+        end_date = pd.Timestamp.max - pd.Timedelta(days=1)  # Ensure end is valid
+        start_date = end_date - pd.Timedelta(days=rows - 1)
+        if start_date < pd.Timestamp.min:
+            start_date = pd.Timestamp.min
+        dates = pd.date_range(start=start_date, periods=rows)
+
     df = pd.DataFrame(
         {
             "id": range(rows),
             "value": [f"value_{i}" for i in range(rows)],
-            "date": pd.date_range("2023-01-01", periods=rows),
+            "date": dates,
         }
     )
     df.to_csv(file_path, index=False)
