@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "parquet-converter"
-version = "0.1.1"
+version = "0.1.2"
 authors = [
     { name="Sami Adnan", email="sami.adnan@ndph.ox.ac.uk" },
 ]
