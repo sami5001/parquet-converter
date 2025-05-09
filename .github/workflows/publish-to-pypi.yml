@@ -9,7 +9,8 @@ jobs:
     name: Build and publish Python package to PyPI
     runs-on: ubuntu-latest
     permissions:
-      contents: read # Needed to checkout the repository
+      contents: write  # Changed from read
+      actions: read    # Added
       # id-token: write # Needed for trusted publishing (optional, more advanced)
 
     steps:
