@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "parquet-converter"
-version = "0.1.2"
+version = "0.2.1"
 authors = [
     { name="Sami Adnan", email="sami.adnan@ndph.ox.ac.uk" },
 ]
 description = "A tool to convert text files to Parquet format"
 readme = "README.md"
 requires-python = ">=3.8"
-license = { text = "MIT" }
+license = "MIT"
 classifiers = [
     "Programming Language :: Python :: 3",
     "Operating System :: OS Independent",
