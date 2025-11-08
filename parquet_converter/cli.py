@@ -161,9 +161,7 @@ def main(args: Optional[List[str]] = None) -> int:
                 logger.error("Analyzer mode requires a directory of parquet files: %s", input_path)
                 return 1
             report_dir = (
-                Path(parsed_args.report_dir).expanduser()
-                if parsed_args.report_dir
-                else config.analyzer_report_dir
+                Path(parsed_args.report_dir).expanduser() if parsed_args.report_dir else config.analyzer_report_dir
             )
             report_path = analyze_directory(input_path, report_dir)
             logger.info("Analysis complete. Report saved to %s", report_path)

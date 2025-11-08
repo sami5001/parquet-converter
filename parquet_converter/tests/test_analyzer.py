@@ -1,4 +1,4 @@
-"""Tests for the analyzer module."""
+"""Test the analyzer module."""
 
 from pathlib import Path
 

@@ -27,13 +27,15 @@ FileOptions = Dict[str, Any]
 
 
 class ColumnProfile(TypedDict):
+    """Lightweight column statistics collected from the parquet output."""
+
     dtype: str
     unique_values: Optional[int]
     null_count: Optional[int]
 
 
 def convert_file(input_path: Union[str, Path], output_dir: Union[str, Path], config: Dict[str, Any]) -> ConversionStats:
-    """
+    r"""
     Convert a single delimited file to parquet format.
 
     Parameters
@@ -101,7 +103,7 @@ def convert_directory(
     output_dir: Union[str, Path],
     config: Dict[str, Any],
 ) -> List[ConversionStats]:
-    """
+    r"""
     Convert every supported file within a directory.
 
     Parameters
@@ -274,7 +276,7 @@ def _convert_with_polars(input_path: Path, output_dir: Path, config: Dict[str, A
 
 
 def _convert_with_pandas(input_path: Path, output_dir: Path, config: Dict[str, Any]) -> ConversionStats:
-    """
+    r"""
     Convert a file using the legacy pandas-based workflow.
 
     Parameters
@@ -356,7 +358,7 @@ def _convert_with_pandas(input_path: Path, output_dir: Path, config: Dict[str, A
 
 
 def _resolve_file_options(input_path: Path, config: Dict[str, Any]) -> FileOptions:
-    """
+    r"""
     Select the parsing options for the current file based on its suffix.
 
     Parameters
@@ -387,7 +389,7 @@ def _resolve_file_options(input_path: Path, config: Dict[str, Any]) -> FileOptio
 
 
 def _build_polars_csv_kwargs(options: FileOptions) -> FileOptions:
-    """
+    r"""
     Translate parser options into Polars keyword arguments.
 
     Parameters
@@ -453,7 +455,7 @@ def _analyze_sample_with_polars(
     options: Dict[str, Any],
     sample_rows: int,
 ) -> Optional[Dict[str, pl.DataType]]:
-    """
+    r"""
     Infer a schema by sampling the source file with Polars.
 
     Parameters
@@ -503,7 +505,7 @@ def _analyze_sample_with_polars(
             tablefmt="grid",
         )
         logger.info("Sample analysis for %s rows:\n%s", sample_rows, table)
-        return schema
+        return dict(schema.items())
     except Exception as exc:  # pragma: no cover - logging aid
         logger.warning("Failed to analyze sample for %s: %s", input_path, exc)
         return None
@@ -574,11 +576,7 @@ def _stream_polars_conversion(
         lazy_frame = pl.scan_csv(input_path, **kwargs)
         lazy_frame.sink_parquet(output_path, compression=compression)
 
-        total_rows = (
-            pl.scan_parquet(output_path)
-            .select(pl.len().alias("rows"))
-            .collect()["rows"][0]
-        )
+        total_rows = pl.scan_parquet(output_path).select(pl.len().alias("rows")).collect()["rows"][0]
         elapsed = time.time() - start_time
         logger.info(
             "Streaming conversion finished in %.2f seconds (%s rows)",
@@ -592,7 +590,7 @@ def _stream_polars_conversion(
 
 
 def _collect_polars_column_stats(output_path: Path, column_limit: int) -> Dict[str, ColumnProfile]:
-    """
+    r"""
     Collect lightweight column statistics from the generated parquet file.
 
     Parameters
@@ -688,11 +686,7 @@ def _verify_conversion(output_path: Path, source_path: Path, verify_rows: int) -
     try:
         lazy_df = pl.scan_parquet(output_path)
         schema = lazy_df.collect_schema()
-        head_df = (
-            lazy_df.head(verify_rows).collect()
-            if verify_rows > 0
-            else pl.DataFrame()
-        )
+        head_df = lazy_df.head(verify_rows).collect() if verify_rows > 0 else pl.DataFrame()
         row_count = int(lazy_df.select(pl.len().alias("rows")).collect()["rows"][0])
         col_count = len(schema)
 

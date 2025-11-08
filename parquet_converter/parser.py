@@ -106,7 +106,7 @@ def parse_csv(input_path: Path, options: Dict) -> pd.DataFrame:
 
 
 def parse_txt(input_path: Path, options: Dict) -> pd.DataFrame:
-    """
+    r"""
     Parse a delimited text file using pandas.
 
     Parameters

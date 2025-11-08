@@ -18,6 +18,8 @@ from rich.table import Table
 
 
 class NumericColumnStats(TypedDict):
+    """Numeric summary statistics captured for a single column."""
+
     min: float
     max: float
     mean: float
@@ -28,11 +30,15 @@ class NumericColumnStats(TypedDict):
 
 
 class NullCountStats(TypedDict):
+    """Null-observation counts and percentages for a column."""
+
     count: int
     percent: float
 
 
 class UniqueValueStats(TypedDict, total=False):
+    """Uniqueness metrics and optional top values for categorical columns."""
+
     count: Optional[int]
     percent: Optional[float]
     most_common: List[Tuple[object, int, float]]
@@ -124,7 +130,7 @@ def get_file_size(file_path: FileLike) -> str:
     >>> tmp_file.unlink()
     """
     size_bytes = Path(file_path).stat().st_size
-    return humanize.naturalsize(size_bytes)
+    return str(humanize.naturalsize(size_bytes))
 
 
 def get_file_modification_time(file_path: FileLike) -> str:

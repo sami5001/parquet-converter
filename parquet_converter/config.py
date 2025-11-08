@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 class CSVOptions(BaseModel):
-    """
+    r"""
     Parsing configuration for CSV inputs.
 
     Attributes
@@ -62,7 +62,7 @@ class CSVOptions(BaseModel):
 
 
 class TXTOptions(BaseModel):
-    """
+    r"""
     Parsing configuration for TXT inputs.
 
     Attributes
