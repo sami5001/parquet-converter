@@ -19,6 +19,9 @@ classifiers = [
 dependencies = [
     "pandas",
     "numpy",
+    "polars",
+    "rich",
+    "humanize",
     "python-dotenv",
     "pyarrow",
     "pydantic",

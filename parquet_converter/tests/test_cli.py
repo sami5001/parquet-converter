@@ -3,6 +3,7 @@
 from pathlib import Path
 from typing import List
 
+import pandas as pd
 import pytest
 
 from ..cli import main, parse_args
@@ -52,6 +53,7 @@ def test_parse_args_input_path() -> None:
     assert args.output_dir is None
     assert args.config is None
     assert not args.verbose
+    assert args.mode == "convert"
 
 
 def test_parse_args_output_dir() -> None:
@@ -140,3 +142,24 @@ def test_main_invalid_config(test_files: List[Path]) -> None:
     """Test handling of invalid configuration."""
     result = main([str(test_files[0]), "-c", "nonexistent.yaml"])
     assert result == 1
+
+
+def test_main_analyze_mode(tmp_path: Path) -> None:
+    """Test analyzer workflow."""
+    parquet_dir = tmp_path / "parquet_data"
+    parquet_dir.mkdir()
+    parquet_file = parquet_dir / "sample.parquet"
+    pd.DataFrame({"value": [1, 2]}).to_parquet(parquet_file)
+    report_dir = tmp_path / "reports"
+
+    result = main(
+        [
+            str(parquet_dir),
+            "--mode",
+            "analyze",
+            "--report-dir",
+            str(report_dir),
+        ]
+    )
+    assert result == 0
+    assert (report_dir / "parquet_analysis_report.txt").exists()

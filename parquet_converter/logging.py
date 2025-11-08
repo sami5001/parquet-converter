@@ -16,10 +16,36 @@ logger = logging.getLogger(__name__)
 
 
 class JSONEncoder(json.JSONEncoder):
-    """Custom JSON encoder for numpy types."""
+    """
+    JSON encoder that gracefully handles numpy and pathlib objects.
+
+    Examples
+    --------
+    >>> encoder = JSONEncoder()
+    >>> encoder.encode({"value": 1})
+    '{"value": 1}'
+    """
 
     def default(self, obj: Any) -> Union[int, float, list, str, Any]:
-        """Convert numpy types to Python types."""
+        """
+        Convert numpy-specific types into native Python equivalents.
+
+        Parameters
+        ----------
+        obj : Any
+            Object to encode.
+
+        Returns
+        -------
+        Union[int, float, list, str, Any]
+            Serialized representation compatible with ``json``.
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> JSONEncoder().default(np.int64(1))
+        1
+        """
         if isinstance(obj, np.integer):
             return int(obj)
         elif isinstance(obj, np.floating):
@@ -32,12 +58,26 @@ class JSONEncoder(json.JSONEncoder):
 
 
 def setup_logging(level: str = "INFO", log_file: Optional[Path] = None, verbose: bool = False) -> None:
-    """Set up logging configuration.
+    """
+    Configure console and file logging for the CLI.
 
-    Args:
-        level: Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
-        log_file: Optional path to log file
-        verbose: Whether to enable verbose logging
+    Parameters
+    ----------
+    level : str, default='INFO'
+        Base logging level for console output.
+    log_file : Optional[Path], default=None
+        Optional destination file for persistent logs.
+    verbose : bool, default=False
+        When ``True`` the console handler logs at ``DEBUG`` level.
+
+    Returns
+    -------
+    None
+        Logging handlers are configured globally.
+
+    Examples
+    --------
+    >>> setup_logging(level="DEBUG")
     """
     # Set log level
     numeric_level = getattr(logging, level.upper(), None)
@@ -88,13 +128,24 @@ def setup_logging(level: str = "INFO", log_file: Optional[Path] = None, verbose:
 
 
 def format_stats_table(stats_list: List[ConversionStats]) -> str:
-    """Format conversion statistics as a table.
+    """
+    Render conversion statistics as a textual table.
 
-    Args:
-        stats_list: List of ConversionStats objects
+    Parameters
+    ----------
+    stats_list : List[ConversionStats]
+        Collection of per-file conversion statistics.
 
-    Returns:
-        Formatted table string
+    Returns
+    -------
+    str
+        Rich table describing each conversion.
+
+    Examples
+    --------
+    >>> stats = ConversionStats("a.csv", "a.csv.parquet", 1, 1, [], [])
+    >>> "a.csv" in format_stats_table([stats])
+    True
     """
     if not stats_list:
         return "No files were converted."
@@ -119,12 +170,34 @@ def format_stats_table(stats_list: List[ConversionStats]) -> str:
 
 
 def save_conversion_report(stats_list: List[ConversionStats], output_dir: Path, config: Dict[str, Any]) -> None:
-    """Save conversion report to a JSON file.
+    """
+    Persist conversion statistics to ``conversion_report.json``.
 
-    Args:
-        stats_list: List of ConversionStats objects
-        output_dir: Output directory
-        config: Configuration dictionary
+    Parameters
+    ----------
+    stats_list : List[ConversionStats]
+        Collection of conversion statistics.
+    output_dir : Path
+        Directory where the report should be stored.
+    config : Dict[str, Any]
+        Configuration dictionary written alongside the summary.
+
+    Returns
+    -------
+    None
+        The report is written to disk as a side effect.
+
+    Examples
+    --------
+    >>> from pathlib import Path
+    >>> tmp_dir = Path("reports")
+    >>> tmp_dir.mkdir(exist_ok=True)
+    >>> stats = ConversionStats("a.csv", "a.csv.parquet", 1, 1, [], [])
+    >>> save_conversion_report([stats], tmp_dir, {})
+    >>> (tmp_dir / "conversion_report.json").exists()
+    True
+    >>> (tmp_dir / "conversion_report.json").unlink()
+    >>> tmp_dir.rmdir()
     """
     # Process config to handle Path objects
     processed_config = {}
@@ -152,10 +225,23 @@ def save_conversion_report(stats_list: List[ConversionStats], output_dir: Path, 
 
 
 def log_conversion_summary(stats_list: List[ConversionStats]) -> None:
-    """Log a summary of the conversion process.
+    """
+    Emit a textual summary of the conversion process.
 
-    Args:
-        stats_list: List of ConversionStats objects
+    Parameters
+    ----------
+    stats_list : List[ConversionStats]
+        Collection of conversion statistics.
+
+    Returns
+    -------
+    None
+        The summary is written to the configured logger.
+
+    Examples
+    --------
+    >>> stats = ConversionStats("a.csv", "a.csv.parquet", 1, 1, [], [])
+    >>> log_conversion_summary([stats])
     """
     if not stats_list:
         logger.warning("No files were converted.")

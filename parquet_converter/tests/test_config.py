@@ -131,3 +131,41 @@ def test_invalid_log_level(config_dict: Dict) -> None:
 
     with pytest.raises(ValueError):
         Config(**config_dict)
+
+
+def test_load_config_env_overrides(monkeypatch: pytest.MonkeyPatch, tmp_path: Path) -> None:
+    """Ensure environment variables override defaults."""
+    monkeypatch.setenv("LOG_LEVEL", "DEBUG")
+    monkeypatch.setenv("OUTPUT_DIR", str(tmp_path / "out"))
+    monkeypatch.setenv("ANALYZER_REPORT_DIR", str(tmp_path / "reports"))
+    monkeypatch.setenv("COMPRESSION_CODEC", "gzip")
+    monkeypatch.setenv("CONVERTER_ENGINE", "pandas")
+    monkeypatch.setenv("SAMPLE_ROWS", "123")
+    monkeypatch.setenv("CHUNK_SIZE", "456")
+    monkeypatch.setenv("VERIFY_ROWS", "7")
+    monkeypatch.setenv("PROFILING_COLUMN_LIMIT", "9")
+
+    config = load_config()
+
+    assert config.log_level == "DEBUG"
+    assert config.output_dir and config.output_dir.name == "out"
+    assert config.analyzer_report_dir and config.analyzer_report_dir.name == "reports"
+    assert config.compression == "gzip"
+    assert config.engine == "pandas"
+    assert config.sample_rows == 123
+    assert config.chunk_size == 456
+    assert config.verify_rows == 7
+    assert config.profiling_column_limit == 9
+
+
+def test_config_validates_paths(tmp_path: Path) -> None:
+    """Verify Config creates directories for output/log locations."""
+    config = Config(
+        output_dir=tmp_path / "output",
+        log_file=tmp_path / "logs" / "run.log",
+        analyzer_report_dir=tmp_path / "reports",
+    )
+
+    assert config.output_dir.exists()
+    assert config.log_file and config.log_file.parent.exists()
+    assert config.analyzer_report_dir and config.analyzer_report_dir.exists()

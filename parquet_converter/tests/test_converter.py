@@ -54,9 +54,12 @@ def config() -> dict:
             "default": "%Y-%m-%d",
             "custom": [],
         },
-        # Add other relevant top-level config keys if needed by tests
-        "infer_dtypes": True,
         "compression": "snappy",
+        "engine": "polars",
+        "sample_rows": 10,
+        "chunk_size": 50,
+        "verify_rows": 2,
+        "profiling_column_limit": 5,
     }
 
 

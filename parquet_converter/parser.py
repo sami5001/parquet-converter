@@ -10,17 +10,36 @@ logger = logging.getLogger(__name__)
 
 
 def parse_file(input_path: Union[str, Path], config: Dict) -> pd.DataFrame:
-    """Parse a file into a pandas DataFrame.
+    """
+    Parse a CSV or TXT file into a pandas DataFrame.
 
-    Args:
-        input_path: Path to input file
-        config: Configuration dictionary
+    Parameters
+    ----------
+    input_path : Union[str, Path]
+        Source file path.
+    config : Dict
+        Configuration dictionary containing ``csv`` and ``txt`` sections.
 
-    Returns:
-        DataFrame containing parsed data
+    Returns
+    -------
+    pd.DataFrame
+        Parsed DataFrame representing the source data.
 
-    Raises:
-        ValueError: If file type is not supported
+    Raises
+    ------
+    ValueError
+        If the file type is unsupported.
+
+    Examples
+    --------
+    >>> from pathlib import Path
+    >>> import pandas as pd
+    >>> tmp = Path("example.csv")
+    >>> pd.DataFrame({'value': [1]}).to_csv(tmp, index=False)
+    >>> df = parse_file(tmp, {'csv': {'delimiter': ','}, 'txt': {}})
+    >>> df.shape
+    (1, 1)
+    >>> tmp.unlink()
     """
     input_path = Path(input_path)
     file_type = input_path.suffix.lower()
@@ -41,14 +60,30 @@ def parse_file(input_path: Union[str, Path], config: Dict) -> pd.DataFrame:
 
 
 def parse_csv(input_path: Path, options: Dict) -> pd.DataFrame:
-    """Parse a CSV file.
+    """
+    Parse a CSV file using pandas.
 
-    Args:
-        input_path: Path to CSV file
-        options: CSV parsing options
+    Parameters
+    ----------
+    input_path : Path
+        CSV file path.
+    options : Dict
+        Pandas parsing options.
 
-    Returns:
-        DataFrame containing parsed data
+    Returns
+    -------
+    pd.DataFrame
+        Parsed DataFrame.
+
+    Examples
+    --------
+    >>> from pathlib import Path
+    >>> import pandas as pd
+    >>> tmp = Path("csv_example.csv")
+    >>> pd.DataFrame({'value': [1]}).to_csv(tmp, index=False)
+    >>> parse_csv(tmp, {'delimiter': ','}).shape
+    (1, 1)
+    >>> tmp.unlink()
     """
     try:
         df = pd.read_csv(
@@ -71,14 +106,30 @@ def parse_csv(input_path: Path, options: Dict) -> pd.DataFrame:
 
 
 def parse_txt(input_path: Path, options: Dict) -> pd.DataFrame:
-    """Parse a text file.
+    """
+    Parse a delimited text file using pandas.
 
-    Args:
-        input_path: Path to text file
-        options: Text file parsing options
+    Parameters
+    ----------
+    input_path : Path
+        Text file path.
+    options : Dict
+        Parsing options shared with :func:`pandas.read_csv`.
 
-    Returns:
-        DataFrame containing parsed data
+    Returns
+    -------
+    pd.DataFrame
+        Parsed DataFrame.
+
+    Examples
+    --------
+    >>> from pathlib import Path
+    >>> import pandas as pd
+    >>> tmp = Path("txt_example.txt")
+    >>> pd.DataFrame({'value': [1]}).to_csv(tmp, sep='\\t', index=False)
+    >>> parse_txt(tmp, {'delimiter': '\\t'}).shape
+    (1, 1)
+    >>> tmp.unlink()
     """
     try:
         df = pd.read_csv(
@@ -101,14 +152,28 @@ def parse_txt(input_path: Path, options: Dict) -> pd.DataFrame:
 
 
 def infer_dtypes(df: pd.DataFrame, config: Dict) -> pd.DataFrame:
-    """Infer data types for DataFrame columns.
+    """
+    Infer numeric, boolean, and datetime dtypes for each column.
 
-    Args:
-        df: Input DataFrame
-        config: Configuration dictionary (should contain datetime_formats dict)
+    Parameters
+    ----------
+    df : pd.DataFrame
+        Input DataFrame.
+    config : Dict
+        Configuration dictionary containing ``datetime_formats``.
 
-    Returns:
-        DataFrame with inferred data types
+    Returns
+    -------
+    pd.DataFrame
+        DataFrame with updated dtypes.
+
+    Examples
+    --------
+    >>> import pandas as pd
+    >>> frame = pd.DataFrame({'value': ['1', '2']})
+    >>> result = infer_dtypes(frame, {'datetime_formats': {}})
+    >>> str(result['value'].dtype)
+    'Int64'
     """
     # Extract datetime format settings safely
     datetime_config = config.get("datetime_formats", {})

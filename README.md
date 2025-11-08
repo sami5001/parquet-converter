@@ -20,8 +20,10 @@ This project is part of Sami Adnan's DPhil research at the Nuffield Department o
 
 - Convert individual files or entire directories of TXT and CSV files to Parquet
 - Automatic file type detection based on extension
+- High-performance streaming conversion powered by Polars with schema sampling
 - Configurable delimiters for CSV and TXT files
 - Generate detailed conversion statistics and reports in JSON format
+- Built-in Parquet analyzer for profiling existing datasets with rich reports
 - Flexible output path configuration with automatic directory creation
 - Support for secure configuration via:
   - Environment variables
@@ -39,6 +41,8 @@ This project is part of Sami Adnan's DPhil research at the Nuffield Department o
   - NA value handling
   - Memory usage optimization
 - Environment variable support for key configuration options
+- Numpy-style documentation for every class and function
+- Docstring snapshots for every module in [`README-api.md`](README-api.md)
 - Comprehensive logging system:
   - Console output
   - File logging
@@ -127,6 +131,18 @@ parquet-converter data_dir/ -o output_dir/ -c config.yaml
 parquet-converter input.csv -v -c custom_config.yaml -o output_dir/
 ```
 
+### Analyzer Mode
+
+Generate a rich text report describing every Parquet file in a directory:
+
+```bash
+# Analyze an existing collection of Parquet files
+parquet-converter /path/to/parquet/dir --mode analyze --report-dir reports/
+```
+
+By default reports are saved under ``<input_dir>/reports/parquet_analysis_report.txt`` unless ``--report-dir`` or
+``ANALYZER_REPORT_DIR`` is provided.
+
 ### Example Configuration Files
 
 1. Basic YAML Configuration:
@@ -195,6 +211,10 @@ export LOG_FILE="conversion.log"
 export DELIMITER=","
 export ENCODING="utf-8"
 ```
+
+## Docstring Standards
+
+All modules, classes, and functions are documented using the NumPy style.
 
 ### Parquet Format Benefits
 

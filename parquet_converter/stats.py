@@ -7,7 +7,39 @@ from typing import Dict, List
 
 @dataclass
 class ConversionStats:
-    """Statistics for a single file conversion."""
+    """
+    Structured representation of a single file conversion.
+
+    Attributes
+    ----------
+    input_file : str
+        Original input file path.
+    output_file : str
+        Generated parquet file path.
+    rows_processed : int
+        Number of rows read from the source file.
+    rows_converted : int
+        Number of rows successfully written to the parquet file.
+    errors : List[str]
+        Collection of error messages captured during conversion.
+    warnings : List[str]
+        Collection of warning messages emitted during conversion.
+    column_stats : Dict[str, Dict]
+        Optional column-level statistics populated by the converter.
+
+    Examples
+    --------
+    >>> stats = ConversionStats(
+    ...     input_file="data.csv",
+    ...     output_file="data.csv.parquet",
+    ...     rows_processed=100,
+    ...     rows_converted=100,
+    ...     errors=[],
+    ...     warnings=[],
+    ... )
+    >>> stats.success
+    True
+    """
 
     input_file: str
     output_file: str
@@ -19,50 +51,169 @@ class ConversionStats:
 
     @property
     def input_path(self) -> Path:
-        """Path to input file."""
+        """
+        Convert the textual input path into a :class:`pathlib.Path`.
+
+        Returns
+        -------
+        Path
+            Path object pointing to the original input file.
+
+        Examples
+        --------
+        >>> stats = ConversionStats("data.csv", "out.parquet", 1, 1, [], [])
+        >>> stats.input_path.name
+        'data.csv'
+        """
         return Path(self.input_file)
 
     @property
     def output_path(self) -> Path:
-        """Path to output file."""
+        """
+        Convert the textual output path into a :class:`pathlib.Path`.
+
+        Returns
+        -------
+        Path
+            Path object pointing to the converted parquet file.
+
+        Examples
+        --------
+        >>> stats = ConversionStats("data.csv", "out.parquet", 1, 1, [], [])
+        >>> stats.output_path.suffix
+        '.parquet'
+        """
         return Path(self.output_file)
 
     @property
     def success(self) -> bool:
-        """Whether the conversion was successful."""
+        """
+        Determine whether the conversion completed without errors.
+
+        Returns
+        -------
+        bool
+            ``True`` when no errors were recorded.
+
+        Examples
+        --------
+        >>> ConversionStats("data.csv", "out.parquet", 1, 1, [], []).success
+        True
+        """
         return len(self.errors) == 0
 
     @property
     def error_count(self) -> int:
-        """Number of errors encountered."""
+        """
+        Count the number of recorded errors.
+
+        Returns
+        -------
+        int
+            Number of errors associated with the conversion.
+
+        Examples
+        --------
+        >>> stats = ConversionStats("data.csv", "out.parquet", 0, 0, ["boom"], [])
+        >>> stats.error_count
+        1
+        """
         return len(self.errors)
 
     @property
     def warning_count(self) -> int:
-        """Number of warnings encountered."""
+        """
+        Count the number of recorded warnings.
+
+        Returns
+        -------
+        int
+            Number of warnings associated with the conversion.
+
+        Examples
+        --------
+        >>> stats = ConversionStats("data.csv", "out.parquet", 1, 1, [], ["slow"])
+        >>> stats.warning_count
+        1
+        """
         return len(self.warnings)
 
     @property
     def rows(self) -> int:
-        """Number of rows processed."""
+        """
+        Convenience accessor for the number of processed rows.
+
+        Returns
+        -------
+        int
+            The value stored in :attr:`rows_processed`.
+
+        Examples
+        --------
+        >>> ConversionStats("data.csv", "out.parquet", 5, 5, [], []).rows
+        5
+        """
         return self.rows_processed
 
     @property
     def columns(self) -> int:
-        """Number of columns in the file."""
+        """
+        Number of profiled columns.
+
+        Returns
+        -------
+        int
+            Length of the :attr:`column_stats` dictionary.
+
+        Examples
+        --------
+        >>> stats = ConversionStats("data.csv", "out.parquet", 1, 1, [], [])
+        >>> stats.add_column_stats("value", {"dtype": "int64"})
+        >>> stats.columns
+        1
+        """
         return len(self.column_stats)
 
     def add_column_stats(self, column: str, stats: Dict) -> None:
-        """Add statistics for a column.
+        """
+        Register column-level statistics.
 
-        Args:
-            column: Column name
-            stats: Dictionary of statistics
+        Parameters
+        ----------
+        column : str
+            Name of the column being profiled.
+        stats : Dict
+            Arbitrary statistics describing the column.
+
+        Returns
+        -------
+        None
+            The internal :attr:`column_stats` dictionary is updated in-place.
+
+        Examples
+        --------
+        >>> stats = ConversionStats("data.csv", "out.parquet", 1, 1, [], [])
+        >>> stats.add_column_stats("value", {"dtype": "int64"})
+        >>> "value" in stats.column_stats
+        True
         """
         self.column_stats[column] = stats
 
     def to_dict(self) -> Dict:
-        """Convert stats to dictionary format."""
+        """
+        Serialize the conversion statistics into a dictionary.
+
+        Returns
+        -------
+        Dict
+            Plain dictionary representation of the dataclass.
+
+        Examples
+        --------
+        >>> stats = ConversionStats("data.csv", "out.parquet", 1, 1, [], [])
+        >>> stats.to_dict()["input_file"]
+        'data.csv'
+        """
         return {
             "input_file": self.input_file,
             "output_file": self.output_file,
@@ -78,13 +229,29 @@ class ConversionStats:
 
     @classmethod
     def from_dict(cls, data: Dict) -> "ConversionStats":
-        """Create stats from dictionary format.
+        """
+        Restore :class:`ConversionStats` from a dictionary.
 
-        Args:
-            data: Dictionary containing stats data
+        Parameters
+        ----------
+        data : Dict
+            Serialized conversion statistics.
 
-        Returns:
-            ConversionStats object
+        Returns
+        -------
+        ConversionStats
+            Newly constructed dataclass instance.
+
+        Examples
+        --------
+        >>> payload = {
+        ...     "input_file": "data.csv",
+        ...     "output_file": "out.parquet",
+        ...     "rows_processed": 1,
+        ...     "rows_converted": 1,
+        ... }
+        >>> ConversionStats.from_dict(payload).input_file
+        'data.csv'
         """
         return cls(
             input_file=data["input_file"],
