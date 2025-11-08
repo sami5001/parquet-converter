@@ -166,6 +166,7 @@ def test_config_validates_paths(tmp_path: Path) -> None:
         analyzer_report_dir=tmp_path / "reports",
     )
 
+    assert config.output_dir is not None
     assert config.output_dir.exists()
     assert config.log_file and config.log_file.parent.exists()
     assert config.analyzer_report_dir and config.analyzer_report_dir.exists()

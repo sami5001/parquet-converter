@@ -7,7 +7,7 @@ import io
 import os
 import random
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Optional, Sequence, Tuple, TypedDict, Union
 
 import humanize
 import polars as pl
@@ -16,7 +16,51 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.table import Table
 
+
+class NumericColumnStats(TypedDict):
+    min: float
+    max: float
+    mean: float
+    median: float
+    std_dev: float
+    null_count: int
+    null_percent: float
+
+
+class NullCountStats(TypedDict):
+    count: int
+    percent: float
+
+
+class UniqueValueStats(TypedDict, total=False):
+    count: Optional[int]
+    percent: Optional[float]
+    most_common: List[Tuple[object, int, float]]
+
+
+AnalysisResult = Dict[str, Any]
+
 FileLike = Union[str, Path]
+
+
+def _safe_float(value: Any) -> float:
+    """
+    Convert potentially nullable numeric values to ``float``.
+
+    Parameters
+    ----------
+    value : Any
+        Numeric-like input retrieved from Polars computations.
+
+    Returns
+    -------
+    float
+        Float representation or ``nan`` when conversion fails.
+    """
+    try:
+        return float(value)
+    except (TypeError, ValueError):
+        return float("nan")
 
 
 def scan_parquet_files(input_dir: FileLike, recursive: bool = True) -> List[Path]:
@@ -111,7 +155,7 @@ def get_file_modification_time(file_path: FileLike) -> str:
     return datetime.datetime.fromtimestamp(mtime).strftime("%Y-%m-%d %H:%M:%S")
 
 
-def calculate_summary_stats(df: pl.DataFrame) -> Dict[str, Dict[str, float]]:
+def calculate_summary_stats(df: pl.DataFrame) -> Dict[str, NumericColumnStats]:
     """
     Compute summary statistics for numeric columns.
 
@@ -132,19 +176,19 @@ def calculate_summary_stats(df: pl.DataFrame) -> Dict[str, Dict[str, float]]:
     >>> calculate_summary_stats(frame)['value']['min']
     1
     """
-    numeric_stats: Dict[str, Dict[str, float]] = {}
+    numeric_stats: Dict[str, NumericColumnStats] = {}
 
     for column_name in df.columns:
         dtype = df[column_name].dtype
         if dtype.is_numeric():
             try:
-                stats = {
-                    "min": df[column_name].min(),
-                    "max": df[column_name].max(),
-                    "mean": df[column_name].mean(),
-                    "median": df[column_name].median(),
-                    "std_dev": df[column_name].std(),
-                    "null_count": df[column_name].null_count(),
+                stats: NumericColumnStats = {
+                    "min": _safe_float(df[column_name].min()),
+                    "max": _safe_float(df[column_name].max()),
+                    "mean": _safe_float(df[column_name].mean()),
+                    "median": _safe_float(df[column_name].median()),
+                    "std_dev": _safe_float(df[column_name].std()),
+                    "null_count": int(df[column_name].null_count()),
                     "null_percent": round(df[column_name].null_count() / max(df.height, 1) * 100, 2),
                 }
                 numeric_stats[column_name] = stats
@@ -154,7 +198,7 @@ def calculate_summary_stats(df: pl.DataFrame) -> Dict[str, Dict[str, float]]:
     return numeric_stats
 
 
-def calculate_null_counts(df: pl.DataFrame) -> Dict[str, Dict[str, float]]:
+def calculate_null_counts(df: pl.DataFrame) -> Dict[str, NullCountStats]:
     """
     Count null observations for each column.
 
@@ -175,7 +219,7 @@ def calculate_null_counts(df: pl.DataFrame) -> Dict[str, Dict[str, float]]:
     >>> calculate_null_counts(frame)['value']['count']
     1
     """
-    null_stats: Dict[str, Dict[str, float]] = {}
+    null_stats: Dict[str, NullCountStats] = {}
     for column_name in df.columns:
         null_count = df[column_name].null_count()
         percent = round(null_count / max(df.height, 1) * 100, 2)
@@ -183,7 +227,7 @@ def calculate_null_counts(df: pl.DataFrame) -> Dict[str, Dict[str, float]]:
     return null_stats
 
 
-def get_unique_values_info(df: pl.DataFrame) -> Dict[str, Dict[str, Union[int, float, List[Tuple[object, int, float]]]]]:
+def get_unique_values_info(df: pl.DataFrame) -> Dict[str, UniqueValueStats]:
     """
     Summarize unique value counts per column.
 
@@ -204,7 +248,7 @@ def get_unique_values_info(df: pl.DataFrame) -> Dict[str, Dict[str, Union[int, f
     >>> get_unique_values_info(frame)['label']['count']
     2
     """
-    unique_stats: Dict[str, Dict[str, Union[int, float, List[Tuple[object, int, float]]]]] = {}
+    unique_stats: Dict[str, UniqueValueStats] = {}
 
     for column_name in df.columns:
         try:
@@ -226,12 +270,12 @@ def get_unique_values_info(df: pl.DataFrame) -> Dict[str, Dict[str, Union[int, f
                 except pl.exceptions.PolarsError:
                     continue
         except pl.exceptions.PolarsError:
-            unique_stats[column_name] = {"count": "N/A", "percent": "N/A"}  # type: ignore[assignment]
+            unique_stats[column_name] = {"count": None, "percent": None}
 
     return unique_stats
 
 
-def analyze_parquet_file(file_path: FileLike) -> Dict[str, object]:
+def analyze_parquet_file(file_path: FileLike) -> AnalysisResult:
     """
     Profile a single parquet file and capture descriptive metrics.
 
@@ -278,7 +322,7 @@ def analyze_parquet_file(file_path: FileLike) -> Dict[str, object]:
         else:
             sample_rows = []
 
-        analysis: Dict[str, object] = {
+        analysis: AnalysisResult = {
             "file_path": str(file_path),
             "file_size": get_file_size(file_path),
             "file_mod_time": get_file_modification_time(file_path),
@@ -297,20 +341,21 @@ def analyze_parquet_file(file_path: FileLike) -> Dict[str, object]:
         }
         return analysis
     except Exception as exc:  # pragma: no cover - formatting branch, still documented
-        return {
+        failure: AnalysisResult = {
             "file_path": str(file_path),
             "error": str(exc),
             "success": False,
         }
+        return failure
 
 
-def format_analysis_report(analyses: Sequence[Dict[str, object]], width: int = 150) -> str:
+def format_analysis_report(analyses: Sequence[AnalysisResult], width: int = 150) -> str:
     """
     Convert raw analysis dictionaries into a formatted report string.
 
     Parameters
     ----------
-    analyses : Sequence[Dict[str, object]]
+    analyses : Sequence[AnalysisResult]
         Collection of file-level analysis dictionaries.
     width : int, default=150
         Console width to use when rendering the report.
@@ -386,8 +431,8 @@ def format_analysis_report(analyses: Sequence[Dict[str, object]], width: int = 1
             column_table.add_column("% Null", justify="right")
 
             for column_name, dtype in analysis.get("columns_info", []):
-                unique_info = analysis["unique_stats"].get(column_name, {})  # type: ignore[index]
-                null_info = analysis["null_stats"].get(column_name, {})  # type: ignore[index]
+                unique_info = analysis["unique_stats"].get(column_name, {})
+                null_info = analysis["null_stats"].get(column_name, {})
                 column_table.add_row(
                     column_name,
                     dtype,
@@ -424,7 +469,7 @@ def format_analysis_report(analyses: Sequence[Dict[str, object]], width: int = 1
             categorical_table.add_column("Count", justify="right")
             categorical_table.add_column("Percentage", justify="right")
             has_categorical_data = False
-            for column_name, stats in analysis["unique_stats"].items():  # type: ignore[index]
+            for column_name, stats in analysis["unique_stats"].items():
                 if "most_common" in stats:
                     has_categorical_data = True
                     for idx_, (value, count, percent) in enumerate(stats["most_common"]):
@@ -511,4 +556,3 @@ def analyze_directory(input_dir: FileLike, output_dir: Optional[FileLike] = None
     report_file.write_text(report_content, encoding="utf-8")
 
     return report_file
-

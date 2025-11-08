@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import List, Optional
 
 from .analyzer import analyze_directory
-from .config import load_config, save_config
+from .config import Config, load_config, save_config
 from .converter import convert_directory, convert_file
 from .logging import log_conversion_summary, save_conversion_report, setup_logging
 
@@ -83,7 +83,7 @@ def parse_args(args: Optional[List[str]] = None) -> argparse.Namespace:
     return parser.parse_args(args)
 
 
-def _build_runtime_config(config) -> dict:
+def _build_runtime_config(config: Config) -> dict:
     """
     Convert the Pydantic config object into a plain dictionary for internal helpers.
 

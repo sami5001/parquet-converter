@@ -154,11 +154,11 @@ class Config(BaseModel):
         Number of rows fetched for verification output.
     profiling_column_limit : int
         Maximum number of columns to profile for stats after conversion.
-    output_dir : Optional[Union[str, Path]]
+    output_dir : Optional[Path]
         Default output directory for converted files.
-    log_file : Optional[Union[str, Path]]
+    log_file : Optional[Path]
         Optional path to a persistent log file.
-    analyzer_report_dir : Optional[Union[str, Path]]
+    analyzer_report_dir : Optional[Path]
         Directory where analyzer reports should be written.
 
     Examples
@@ -178,9 +178,9 @@ class Config(BaseModel):
     chunk_size: int = 500_000
     verify_rows: int = 10
     profiling_column_limit: int = 25
-    output_dir: Optional[Union[str, Path]] = None
-    log_file: Optional[Union[str, Path]] = None
-    analyzer_report_dir: Optional[Union[str, Path]] = None
+    output_dir: Optional[Path] = None
+    log_file: Optional[Path] = None
+    analyzer_report_dir: Optional[Path] = None
 
     @field_validator("log_level")
     @classmethod

@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, TypedDict, Union, cast
 
 import humanize
 import polars as pl
@@ -21,6 +21,15 @@ DEFAULT_SAMPLE_ROWS = 100_000
 DEFAULT_CHUNK_SIZE = 500_000
 DEFAULT_VERIFY_ROWS = 10
 DEFAULT_COLUMN_LIMIT = 25
+
+
+FileOptions = Dict[str, Any]
+
+
+class ColumnProfile(TypedDict):
+    dtype: str
+    unique_values: Optional[int]
+    null_count: Optional[int]
 
 
 def convert_file(input_path: Union[str, Path], output_dir: Union[str, Path], config: Dict[str, Any]) -> ConversionStats:
@@ -87,7 +96,11 @@ def convert_file(input_path: Union[str, Path], output_dir: Union[str, Path], con
     return _convert_with_polars(input_path, output_dir, runtime_config)
 
 
-def convert_directory(input_dir: Union[str, Path], output_dir: Union[str, Path], config: Dict[str, Any]) -> List[ConversionStats]:
+def convert_directory(
+    input_dir: Union[str, Path],
+    output_dir: Union[str, Path],
+    config: Dict[str, Any],
+) -> List[ConversionStats]:
     """
     Convert every supported file within a directory.
 
@@ -249,7 +262,7 @@ def _convert_with_polars(input_path: Path, output_dir: Path, config: Dict[str, A
         warnings=[],
     )
     for column_name, column_info in column_stats.items():
-        stats.add_column_stats(column_name, column_info)
+        stats.add_column_stats(column_name, cast(Dict[str, Any], column_info))
 
     logger.info(
         "Successfully converted %s to %s in %.2f seconds",
@@ -342,7 +355,7 @@ def _convert_with_pandas(input_path: Path, output_dir: Path, config: Dict[str, A
         )
 
 
-def _resolve_file_options(input_path: Path, config: Dict[str, Any]) -> Dict[str, Any]:
+def _resolve_file_options(input_path: Path, config: Dict[str, Any]) -> FileOptions:
     """
     Select the parsing options for the current file based on its suffix.
 
@@ -367,13 +380,13 @@ def _resolve_file_options(input_path: Path, config: Dict[str, Any]) -> Dict[str,
     """
     suffix = input_path.suffix.lower()
     if suffix == ".csv":
-        return config.get("csv", {})
+        return cast(FileOptions, config.get("csv", {}))
     if suffix == ".txt":
-        return config.get("txt", {})
+        return cast(FileOptions, config.get("txt", {}))
     raise ValueError(f"Unsupported file type: {suffix}")
 
 
-def _build_polars_csv_kwargs(options: Dict[str, Any]) -> Dict[str, Any]:
+def _build_polars_csv_kwargs(options: FileOptions) -> FileOptions:
     """
     Translate parser options into Polars keyword arguments.
 
@@ -435,7 +448,11 @@ def _normalize_polars_encoding(value: str) -> str:
     return normalized
 
 
-def _analyze_sample_with_polars(input_path: Path, options: Dict[str, Any], sample_rows: int) -> Optional[Dict[str, pl.DataType]]:
+def _analyze_sample_with_polars(
+    input_path: Path,
+    options: Dict[str, Any],
+    sample_rows: int,
+) -> Optional[Dict[str, pl.DataType]]:
     """
     Infer a schema by sampling the source file with Polars.
 
@@ -574,7 +591,7 @@ def _stream_polars_conversion(
         return False, 0, 0.0
 
 
-def _collect_polars_column_stats(output_path: Path, column_limit: int) -> Dict[str, Dict[str, Optional[int]]]:
+def _collect_polars_column_stats(output_path: Path, column_limit: int) -> Dict[str, ColumnProfile]:
     """
     Collect lightweight column statistics from the generated parquet file.
 
@@ -611,7 +628,7 @@ def _collect_polars_column_stats(output_path: Path, column_limit: int) -> Dict[s
         exprs.append(pl.col(column).n_unique().alias(f"{column}__unique"))
         exprs.append(pl.col(column).null_count().alias(f"{column}__null"))
 
-    stats: Dict[str, Dict[str, Optional[int]]] = {}
+    stats: Dict[str, ColumnProfile] = {}
     result = lazy_frame.select(exprs).collect() if exprs else None
 
     for column in profiled_columns:
@@ -620,20 +637,22 @@ def _collect_polars_column_stats(output_path: Path, column_limit: int) -> Dict[s
         unique_value: Optional[int] = None
         null_value: Optional[int] = None
         if result is not None:
-            unique_value = int(result[unique_key][0])
-            null_value = int(result[null_key][0])
-        stats[column] = {
-            "dtype": str(schema[column]),
-            "unique_values": unique_value,
-            "null_count": null_value,
-        }
+            unique_series = cast(pl.Series, result[unique_key])
+            null_series = cast(pl.Series, result[null_key])
+            unique_value = int(unique_series[0])
+            null_value = int(null_series[0])
+        stats[column] = ColumnProfile(
+            dtype=str(schema[column]),
+            unique_values=unique_value,
+            null_count=null_value,
+        )
 
     for column in columns[column_limit:]:
-        stats[column] = {
-            "dtype": str(schema[column]),
-            "unique_values": None,
-            "null_count": None,
-        }
+        stats[column] = ColumnProfile(
+            dtype=str(schema[column]),
+            unique_values=None,
+            null_count=None,
+        )
 
     return stats
 
