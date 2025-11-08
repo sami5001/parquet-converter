@@ -173,7 +173,7 @@ def convert_directory(
 
 
 def _convert_with_polars(input_path: Path, output_dir: Path, config: Dict[str, Any]) -> ConversionStats:
-    """
+    r"""
     Run the Polars-based conversion workflow for a single file.
 
     Parameters
