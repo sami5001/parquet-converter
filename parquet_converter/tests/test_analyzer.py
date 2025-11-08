@@ -8,7 +8,7 @@ from .. import analyzer
 
 
 def _write_sample_parquet(file_path: Path) -> None:
-    """Helper to write a tiny parquet file for testing."""
+    """Write a tiny parquet file for testing."""
     frame = pl.DataFrame({"value": [1, 2, None], "label": ["a", "b", "b"]})
     frame.write_parquet(file_path)
 
